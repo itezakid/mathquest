@@ -1,0 +1,60 @@
+name: Build & Package
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # bisa trigger manual dari GitHub
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npm run build
+
+      - name: Package untuk upload cPanel
+        run: |
+          mkdir -p release
+          cp -r .next release/
+          cp -r public release/
+          cp package.json release/
+          cp package-lock.json release/
+          cp next.config.js release/
+          cp server.js release/
+          cd release
+          zip -r ../mathquest-build.zip .
+          cd ..
+          echo "Build selesai: $(du -sh mathquest-build.zip | cut -f1)"
+
+      - name: Upload ke GitHub Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: "Build #${{ github.run_number }}"
+          body: |
+            Otomatis dari commit: ${{ github.sha }}
+            
+            **Cara deploy:**
+            1. Download `mathquest-build.zip`
+            2. Extract → upload semua isinya ke folder app di cPanel
+            3. Di cPanel Node.js App → klik Restart
+          files: mathquest-build.zip
+          make_latest: true
