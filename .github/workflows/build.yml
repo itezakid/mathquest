@@ -17,10 +17,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+           cache-dependency-path: package.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         env:
@@ -36,7 +36,7 @@ jobs:
           cp -r .next release/
           cp -r public release/
           cp package.json release/
-          cp package-lock.json release/
+          cp package-lock.json release/ 2>/dev/null || true
           cp next.config.js release/
           cp server.js release/
           cd release
