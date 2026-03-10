@@ -3,7 +3,7 @@ name: Build & Package
 on:
   push:
     branches: [main]
-  workflow_dispatch: # bisa trigger manual dari GitHub
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,7 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-           cache-dependency-path: package.json
 
       - name: Install dependencies
         run: npm install
@@ -36,25 +35,18 @@ jobs:
           cp -r .next release/
           cp -r public release/
           cp package.json release/
-          cp package-lock.json release/ 2>/dev/null || true
           cp next.config.js release/
           cp server.js release/
           cd release
           zip -r ../mathquest-build.zip .
           cd ..
-          echo "Build selesai: $(du -sh mathquest-build.zip | cut -f1)"
+          echo "Build selesai"
 
       - name: Upload ke GitHub Releases
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: "Build #${{ github.run_number }}"
-          body: |
-            Otomatis dari commit: ${{ github.sha }}
-            
-            **Cara deploy:**
-            1. Download `mathquest-build.zip`
-            2. Extract → upload semua isinya ke folder app di cPanel
-            3. Di cPanel Node.js App → klik Restart
+          body: "Commit: ${{ github.sha }}"
           files: mathquest-build.zip
           make_latest: true
